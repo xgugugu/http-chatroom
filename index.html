@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>聊天室</title>
+</head>
+<body>
+  <div>
+    <input id="string" type="text" placeholder="请输入内容"></input>
+    <button id="submit">发送</button>
+  </div>
+  <div id="content"></div>
+	<script>
+		function httpGet(url, callback) {
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.onreadystatechange = function() { 
+				if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+					callback(xmlHttp.responseText);
+				}
+			}
+			xmlHttp.open("GET", url, true);
+			xmlHttp.send(null);
+		}
+		function httpPost(url, content, callback) {
+			var xmlHttp = new XMLHttpRequest();
+			xmlHttp.onreadystatechange = function() { 
+				if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+					callback(xmlHttp.responseText);
+				}
+			}
+			xmlHttp.open("POST", url, true);
+			xmlHttp.send(content);
+		}
+		function getQueryString(name) { 
+      var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i"); 
+      var r = window.location.search.substr(1).match(reg); 
+      if (r != null) return decodeURIComponent(r[2]); 
+      return null; 
+    }
+		function list() {
+      httpGet('/list/?token=' + getQueryString('token'), function(req) {
+        var json = JSON.parse(req);
+        var str = '';
+        for (var i in json) {
+          str = '<p>' + json[i].user + ' 说：' + json[i].string + '</p>' + str;
+        }
+        document.getElementById('content').innerHTML = str;
+      });
+      setTimeout(list, 1000);
+		}
+    document.getElementById('submit').onclick = function() {
+      document.getElementById('submit').disabled = true;
+      var str = document.getElementById('string').value;
+      if (str == '') {
+        alert('不能发送空消息');
+        document.getElementById('submit').disabled = false;
+      } else {
+        var json = {
+          'string': str, 
+          'token': getQueryString('token')
+        };
+        httpPost('/send/', JSON.stringify(json), function(res) {
+          if (res == 'error') {
+            alert('发送失败！');
+          } else {
+            list();
+          }
+          document.getElementById('submit').disabled = false;
+        });
+      }
+    };
+		list();
+	</script>
+</body>
+</html>
