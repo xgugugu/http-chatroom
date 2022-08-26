@@ -3,11 +3,14 @@
 <head>
 	<meta charset="utf-8">
 	<title>聊天室</title>
+	<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
 </head>
 <body>
   <div>
-    <input id="string" type="text" placeholder="请输入内容"></input>
+    <textarea rows="4" cols="40" style="resize:none;" id="string" placeholder="输入发送的信息"></textarea>
+    <br>
     <button id="submit">发送</button>
+    <button id="reload">刷新</button>
   </div>
   <div id="content"></div>
 	<script>
@@ -41,13 +44,21 @@
       httpGet('/list/?token=' + getQueryString('token'), function(req) {
         var json = JSON.parse(req);
         var str = '';
+        function htmlcode(sHtml) {
+          return sHtml.replace(/[<>&"]/g, function(c) {
+            return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
+          });
+        }
         for (var i in json) {
-          str = '<p>' + json[i].user + ' 说：' + json[i].string + '</p>' + str;
+          str = '<p>' + htmlcode(json[i].user) + ' 说：<br><textarea cols="40" style="resize:none;" readonly>' + htmlcode(json[i].string) + '</textarea></p>' + str;
         }
         document.getElementById('content').innerHTML = str;
+        $('textarea:not([id])').each(function() {
+          $(this).css('height', this.scrollHeight + 'px');
+        });
       });
-      setTimeout(list, 1000);
 		}
+		document.getElementById('reload').onclick = list;
     document.getElementById('submit').onclick = function() {
       document.getElementById('submit').disabled = true;
       var str = document.getElementById('string').value;
@@ -66,6 +77,7 @@
             list();
           }
           document.getElementById('submit').disabled = false;
+          document.getElementById('string').value = '';
         });
       }
     };
