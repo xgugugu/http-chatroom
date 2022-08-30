@@ -1,87 +1,127 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<meta charset="utf-8">
-	<title>聊天室</title>
-	<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
-</head>
-<body>
-  <div>
-    <textarea rows="4" cols="40" style="resize:none;" id="string" placeholder="输入发送的信息"></textarea>
-    <br>
-    <button id="submit">发送</button>
-    <button id="reload">刷新</button>
-  </div>
-  <div id="content"></div>
-	<script>
-		function httpGet(url, callback) {
-			var xmlHttp = new XMLHttpRequest();
-			xmlHttp.onreadystatechange = function() { 
-				if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-					callback(xmlHttp.responseText);
-				}
-			}
-			xmlHttp.open("GET", url, true);
-			xmlHttp.send(null);
-		}
-		function httpPost(url, content, callback) {
-			var xmlHttp = new XMLHttpRequest();
-			xmlHttp.onreadystatechange = function() { 
-				if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-					callback(xmlHttp.responseText);
-				}
-			}
-			xmlHttp.open("POST", url, true);
-			xmlHttp.send(content);
-		}
-		function getQueryString(name) { 
-      var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i"); 
-      var r = window.location.search.substr(1).match(reg); 
-      if (r != null) return decodeURIComponent(r[2]); 
-      return null; 
-    }
-		function list() {
-      httpGet('/list/?token=' + getQueryString('token'), function(req) {
-        var json = JSON.parse(req);
-        var str = '';
-        function htmlcode(sHtml) {
-          return sHtml.replace(/[<>&"]/g, function(c) {
-            return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
-          });
-        }
-        for (var i in json) {
-          str = '<p>' + htmlcode(json[i].user) + ' 说：<br><textarea cols="40" style="resize:none;" readonly>' + htmlcode(json[i].string) + '</textarea></p>' + str;
-        }
-        document.getElementById('content').innerHTML = str;
-        $('textarea:not([id])').each(function() {
-          $(this).css('height', this.scrollHeight + 'px');
-        });
-      });
-		}
-		document.getElementById('reload').onclick = list;
-    document.getElementById('submit').onclick = function() {
-      document.getElementById('submit').disabled = true;
-      var str = document.getElementById('string').value;
-      if (str == '') {
-        alert('不能发送空消息');
-        document.getElementById('submit').disabled = false;
-      } else {
-        var json = {
-          'string': str, 
-          'token': getQueryString('token')
-        };
-        httpPost('/send/', JSON.stringify(json), function(res) {
-          if (res == 'error') {
-            alert('发送失败！');
-          } else {
-            list();
+  <head>
+    <meta charset="utf-8">
+    <title>聊天室</title>
+    <script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js">
+    </script>
+  </head>
+  <body>
+    <div>
+      <textarea rows="4" cols="60" style="resize:none;" id="string" placeholder="输入发送的信息"></textarea>
+      <br>
+      <button id="submit">发送</button>
+      <button id="reload">刷新</button>
+    </div>
+    <div id="content">
+    </div>
+    <script>
+      function httpGet(url, callback) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+            callback(xmlHttp.responseText);
           }
-          document.getElementById('submit').disabled = false;
-          document.getElementById('string').value = '';
+        }
+        xmlHttp.open("GET", url, true);
+        xmlHttp.send(null);
+      }
+      function httpPost(url, content, callback) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.onreadystatechange = function() {
+          if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+            callback(xmlHttp.responseText);
+          }
+        }
+        xmlHttp.open("POST", url, true);
+        xmlHttp.send(content);
+      }
+      function getQueryString(name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)", "i");
+        var r = window.location.search.substr(1).match(reg);
+        if (r != null) return decodeURIComponent(r[2]);
+        return null;
+      }
+      function list() {
+        httpGet('/list/?token=' + getQueryString('token'),
+        function(req) {
+          var json = JSON.parse(req);
+          var str = '';
+          function htmlcode(sHtml) {
+            return sHtml.replace(/[<>&"]/g,
+            function(c) {
+              return {
+                '<': '&lt;',
+                '>': '&gt;',
+                '&': '&amp;',
+                '"': '&quot;'
+              } [c];
+            });
+          }
+          for (var i in json) {
+            str = '<p>#' + json[i].id.toString() + ' 来自' + htmlcode(json[i].user) + '<br><textarea cols="60" style="resize:none; max-height:300px;" readonly>' + htmlcode(json[i].string) + '</textarea></p>' + str;
+          }
+          document.getElementById('content').innerHTML = str;
+          $('textarea:not([id])').each(function() {
+            $(this).css('height', this.scrollHeight + 'px');
+          });
         });
       }
-    };
-		list();
-	</script>
-</body>
+      function get() {
+        httpGet('/new/?token=' + getQueryString('token'), function(req) {
+          var json = JSON.parse(req);
+          var str = '';
+          function htmlcode(sHtml) {
+            return sHtml.replace(/[<>&"]/g,
+            function(c) {
+              return {
+                '<': '&lt;',
+                '>': '&gt;',
+                '&': '&amp;',
+                '"': '&quot;'
+              } [c];
+            });
+          }
+          for (var i in json) {
+            str = '<p>#' + json[i].id.toString() + ' 来自' + htmlcode(json[i].user) + '<br><textarea id="newtalk" cols="60" style="resize:none; max-height:500px;" readonly>' + htmlcode(json[i].string) + '</textarea></p>' + str;
+          }
+          if (str != '') document.getElementById('content').innerHTML = str + document.getElementById('content').innerHTML;
+          $('textarea#newtalk').each(function() {
+            $(this).removeAttr('id');
+            $(this).removeAttr('style');
+            $(this).css('height', this.scrollHeight + 'px');
+            $(this).css('resize', 'none');
+            $(this).css('max-height', '300px');
+          });
+        });
+        setTimeout(get, 1000);
+      }
+      document.getElementById('reload').onclick = list;
+      document.getElementById('submit').onclick = function() {
+        document.getElementById('submit').disabled = true;
+        var str = document.getElementById('string').value;
+        if (str == '') {
+          alert('不能发送空消息');
+          document.getElementById('submit').disabled = false;
+        } else {
+          var json = {
+            'string': str,
+            'token': getQueryString('token')
+          };
+          httpPost('/send/', JSON.stringify(json),
+          function(res) {
+            if (res == 'error') {
+              alert('发送失败！');
+            } else {
+              get();
+            }
+            document.getElementById('submit').disabled = false;
+            document.getElementById('string').value = '';
+          });
+        }
+      };
+      get();
+      list();
+    </script>
+  </body>
 </html>
