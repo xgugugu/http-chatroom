@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="utf-8">
+    <title>聊天室</title>
+    <script src="https://cdn.staticfile.org/vue/3.2.45/vue.global.prod.min.js"></script>
+    <script src="https://cdn.staticfile.org/axios/1.2.6/axios.min.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            <textarea v-model="msg" @keydown.enter.native="key" rows="4" cols="60" style="resize: none;"
+                placeholder="Ctrl+Enter发送"></textarea>
+            <button @click="send">发送</button>
+        </div>
+        <div v-for="i in list">
+            <p>#{{ i.id }} 来自 {{ i.user }}
+                <br>
+                <textarea :value="i.body" cols="60" style="resize: none;" readonly></textarea>
+            </p>
+        </div>
+    </div>
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    id: 0,
+                    list: [],
+                    msg: ''
+                }
+            },
+            mounted() {
+                axios.defaults.headers.common['token'] = localStorage.getItem('token');
+                let getMsg = () => {
+                    axios.post('/get/', {
+                        id: this.id
+                    }).then((res) => {
+                        this.list.unshift(res.data.data);
+                        this.id++;
+                        getMsg();
+                    }).catch((error) => {
+                        alert('获取消息失败：' + error.response.data.msg);
+                        if (error.response.status == 403) {
+                            window.location.replace('/');
+                        }
+                    });
+                };
+                getMsg();
+            },
+            methods: {
+                key(e) {
+                    if (e.ctrlKey && e.keyCode == 13) {
+                        this.send();
+                    }
+                },
+                send() {
+                    axios.post('/post/', {
+                        body: this.msg
+                    }).then((res) => {
+                        this.msg = '';
+                    }).catch((error) => {
+                        alert('发送消息失败：' + error.response.data.msg);
+                    });
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
